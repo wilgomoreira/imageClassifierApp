@@ -6,8 +6,6 @@ from PIL import Image, ImageTk
 from dataset import DataLoaderHandler  
 from main_train_test_model import MLPNN, Config  
 
-DATASET_NAME = Config.DATASET_NAME
-SAVED_MODEL = Config.MODEL_FILE
 
 class ImageClassifierApp:
     def __init__(self, root, dataset_name):
@@ -16,8 +14,8 @@ class ImageClassifierApp:
         self.root.geometry("400x500")
         self.root.configure(bg="#2C3E50")
         
-        self.model = self.load_model()
         self.data_handler = DataLoaderHandler(dataset_name)
+        self.model = self.load_model(self.data_handler.input_dim, Config.N_NEURONS, Config.N_CLASSES)
         
         self.frame = tk.Frame(root, bg="#34495E", padx=20, pady=20)
         self.frame.pack(pady=20)
@@ -37,10 +35,10 @@ class ImageClassifierApp:
         self.btn_exit = tk.Button(self.frame, text="Exit", command=root.quit, bg="#2ECC71", fg="white", font=("Arial", 12), padx=10, pady=5)
         self.btn_exit.pack(pady=5)
     
-    def load_model(self):
+    def load_model(self, input_dim, num_neurons, num_classes):
         DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        model = MLPNN().to(DEVICE)
-        model.load_state_dict(torch.load(SAVED_MODEL, map_location=DEVICE))
+        model = MLPNN(input_dim, num_neurons, num_classes).to(DEVICE)
+        model.load_state_dict(torch.load(Config.MODEL_FILE, map_location=DEVICE))
         model.eval()
         return model
     
@@ -87,5 +85,5 @@ class ImageClassifierApp:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = ImageClassifierApp(root, DATASET_NAME)
+    app = ImageClassifierApp(root, Config.DATASET_NAME)
     root.mainloop()

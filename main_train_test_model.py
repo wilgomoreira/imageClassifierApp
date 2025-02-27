@@ -15,10 +15,10 @@ class Config:
     DATASET_NAME = 'CIFAR10'  # BINARY DATASET: MNIST, FashionMNIST, CIFAR10
 
 class MLPNN(nn.Module):
-    def __init__(self, input_dim, num_classes=Config.N_CLASSES):
+    def __init__(self, input_dim, num_neurons, num_classes):
         super(MLPNN, self).__init__()
-        self.fc1 = nn.Linear(input_dim, Config.N_NEURONS)
-        self.fc2 = nn.Linear(Config.N_NEURONS, num_classes)  
+        self.fc1 = nn.Linear(input_dim, num_neurons)
+        self.fc2 = nn.Linear(num_neurons, num_classes)  
     
     def forward(self, x):
         x = x.view(x.size(0), -1)  
@@ -88,7 +88,7 @@ if __name__ == "__main__":
     input_dim, train_loader, test_loader = dataloader.input_dim, dataloader.train_loader, dataloader.test_loader
     
     # Initialize model, loss, optimizer
-    model = MLPNN(input_dim)
+    model = MLPNN(input_dim, Config.N_NEURONS, Config.N_CLASSES)
     criterion = nn.BCEWithLogitsLoss()
     optimizer = optim.Adam(model.parameters(), lr=Config.LEARNING_RATE)
     

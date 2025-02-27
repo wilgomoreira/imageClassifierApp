@@ -6,10 +6,10 @@ from matplotlib.ticker import MultipleLocator
 from netcal.metrics import ECE
 from sklearn.metrics import accuracy_score, f1_score, average_precision_score
 from main_train_test_model import Config
+from inter_prob import BinaryKDE
 
 class PostProcessing:
     THRESHOLD = 0.5
-    DIR_LOGITS_LABELS = Config.DIR_LOGITS_LABELS
     OUTPUT_DIR = 'results'
     PLOTS_DIR = 'plots_and_histograms'
     BIN_ECE = 10
@@ -17,7 +17,7 @@ class PostProcessing:
     ROUND = 2
     
     def __init__(self):
-        self.dir_logits_labels = self.DIR_LOGITS_LABELS
+        self.dir_logits_labels = Config.DIR_LOGITS_LABELS
         os.makedirs(self.OUTPUT_DIR, exist_ok=True)
         os.makedirs(self.PLOTS_DIR, exist_ok=True)
         self.train_logits, self.train_labels, self.test_logits, self.test_labels = self.load_logits_labels()
@@ -47,11 +47,15 @@ class PostProcessing:
     def run_analysis(self):
         # Logits - Histogram and metrics
         self.histogram(self.classes_logits, 'logit', '1')
-        self.compute_metrics(self.test_logits, self.test_labels, 'METRICS IN TEST TIME')
         
         # Likelihoods - Histogram and metrics
         classes_likes = self.logits_to_like_in_all_classes(self.classes_logits)
         self.histogram(classes_likes, 'likelihood', '2')
+
+        #likelihoods by KDE
+        kde = BinaryKDE(self.classes_logits, self.test_labels)
+        self.compute_metrics(self.test_logits, kde.posterior_probs, self.test_labels, 'METRICS IN TEST TIME')
+
     
     def histogram(self, class_data_dict, name_of_chart, number):
         plt.figure(figsize=(8, 6))
@@ -67,21 +71,35 @@ class PostProcessing:
         plt.savefig(f"{self.PLOTS_DIR}/{number}_{name_of_chart}_histogram.pdf")
         plt.close()
     
-    def compute_metrics(self, logits, true_labels, name):
-        logits_flat = logits.flatten()
-        like_flat = self.logits_to_likelihoods(logits_flat)
-        true_labels_flat = true_labels.flatten()
-        pred_labels = [1 if prob > self.THRESHOLD else 0 for prob in like_flat]
+    def compute_metrics(self, baseline_logits, enhanced_like, test_labels, name):
+        baseline_logits_flatt = baseline_logits.flatten()
+        baseline_like_flatt = self.logits_to_likelihoods(baseline_logits_flatt)
+        true_labels_flatt = test_labels.flatten()
+        baseline_labels_flatt = [1 if prob > self.THRESHOLD else 0 for prob in baseline_like_flatt]
         
-        acc = accuracy_score(true_labels_flat, pred_labels)
-        f1 = f1_score(true_labels_flat, pred_labels)
-        ave_prec = average_precision_score(true_labels_flat, like_flat)
-        ece = ECE(bins=self.BIN_ECE)
-        ece_score = ece.measure(like_flat, true_labels_flat)
-        
+        #baseline
+        base_acc = accuracy_score(true_labels_flatt, baseline_labels_flatt)
+        base_f1 = f1_score(true_labels_flatt, baseline_labels_flatt)
+        base_ave_prec = average_precision_score(true_labels_flatt, baseline_like_flatt)
+        base_ece = ECE(bins=self.BIN_ECE)
+        base_ece_score = base_ece.measure(baseline_like_flatt, true_labels_flatt)
+
+        #enhanced probs
+        enhanced_like_flatt = enhanced_like.flatten()
+        enhanced_labels_flatt = [1 if prob > self.THRESHOLD else 0 for prob in enhanced_like_flatt]
+        enhanced_acc = accuracy_score(true_labels_flatt, enhanced_labels_flatt)
+        enhanced_f1 = f1_score(true_labels_flatt, enhanced_labels_flatt)
+        enhanced_ave_prec = average_precision_score(true_labels_flatt, enhanced_like_flatt)
+        enhanced_ece = ECE(bins=self.BIN_ECE)
+        enhanced_ece = enhanced_ece.measure(enhanced_like_flatt, true_labels_flatt)
+
         result_text = (f'{name}\n'
-                       f'ACC: {self.perc_format(acc)}% | F1 SCORE: {self.perc_format(f1)}% | '
-                       f'AVER_PREC: {self.perc_format(ave_prec)}% | ECE: {self.perc_format(ece_score)}%\n')
+                       f'BASELINE: \n'
+                       f'ACC: {self.perc_format(base_acc)}% | F1 SCORE: {self.perc_format(base_f1)}% | '
+                       f'AVER_PREC: {self.perc_format(base_ave_prec)}% | ECE: {self.perc_format(base_ece_score)}%\n'
+                       f'KDE: \n'
+                       f'ACC: {self.perc_format(enhanced_acc)}% | F1 SCORE: {self.perc_format(enhanced_f1)}% | '
+                       f'AVER_PREC: {self.perc_format(enhanced_ave_prec)}% | ECE: {self.perc_format(enhanced_ece)}%\n')
         
         self.save_results_to_file(result_text, f'{name.lower()}.txt')
     

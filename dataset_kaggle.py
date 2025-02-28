@@ -4,10 +4,16 @@ from torch.utils.data import DataLoader, random_split, Dataset
 from torchvision import transforms
 from PIL import Image
 
-def download_and_extract_kaggle_dataset(dataset_name, kaggle_dataset_path, extract_path="./data"):
+class Config:
+    TRAIN_SIZE = 0.8
+    BATCH_SIZE = 32
+    ROOT = "./data_kaggle"
+    DATASET_KAGGLE = {'name': 'FIRE', 'path': 'https://www.kaggle.com/datasets/phylake1337/fire-dataset'}   
+
+def download_and_extract_kaggle_dataset(dataset_name, kaggle_dataset_path, extract_path=Config.ROOT):
     os.makedirs(extract_path, exist_ok=True)
     kaggle.api.dataset_download_files(kaggle_dataset_path, path=extract_path, unzip=True)
-    print(f"Dataset {dataset_name} baixado e extraído em {extract_path}")
+    print(f"Dataset {dataset_name} downloaded and extract it in {extract_path}")
 
 class CustomImageDataset(Dataset):
     def __init__(self, root_dir, transform=None):
@@ -42,7 +48,7 @@ class CustomImageDataset(Dataset):
 class DataLoaderHandler:
     def __init__(self, dataset_name, kaggle_dataset_path):
         self.dataset_name = dataset_name
-        self.dataset_path = os.path.join("./data", dataset_name)
+        self.dataset_path = os.path.join(Config.ROOT, dataset_name)
         
         if not os.path.exists(self.dataset_path):
             download_and_extract_kaggle_dataset(dataset_name, kaggle_dataset_path, self.dataset_path)
@@ -59,11 +65,11 @@ class DataLoaderHandler:
         return num_channels * height * width
 
     def _split_dataset(self):
-        train_size = int(0.8 * len(self.dataset))
+        train_size = int(Config.TRAIN_SIZE * len(self.dataset))
         test_size = len(self.dataset) - train_size
         return random_split(self.dataset, [train_size, test_size])
 
     def _create_dataloaders(self):
-        train_loader = DataLoader(self.train_data, batch_size=32, shuffle=True)
-        test_loader = DataLoader(self.test_data, batch_size=32, shuffle=False)
+        train_loader = DataLoader(self.train_data, batch_size=Config.BATCH_SIZE, shuffle=True)
+        test_loader = DataLoader(self.test_data, batch_size=Config.BATCH_SIZE, shuffle=False)
         return train_loader, test_loader

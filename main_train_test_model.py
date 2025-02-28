@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from dataset import DataLoaderHandler
+from dataset_kaggle import DataLoaderHandler as DataLoaderHandlerKaggle
+from dataset_kaggle import Config as ConfigDataKaggle
 import numpy as np
 
 class Config:
@@ -12,7 +14,20 @@ class Config:
     NUM_EPOCHS = 5
     LEARNING_RATE = 0.001
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    DATASET_NAME = 'CIFAR10'  # BINARY DATASET: MNIST, FashionMNIST, CIFAR10
+    DATASET_ORIGIN = 'KAGGLE' # PYTORCH, KAGGLE
+    DATASET_NAME_PYTORCH = 'CIFAR10'  # BINARY DATASET: MNIST, FashionMNIST, CIFAR10
+    DATASET_NAME_KAGGLE = 'FIRE'
+
+class ChooseDataset:
+    def __init__(self, dataset_origin):
+        if dataset_origin == 'PYTORCH':
+            dataset_name = Config.DATASET_NAME_PYTORCH
+            self.dataloader = DataLoaderHandler(dataset_name)
+        else:
+            dataset_info = ConfigDataKaggle.DATASET_KAGGLE.get(Config.DATASET_NAME_KAGGLE, {})
+            dataset_name = dataset_info.get('name', 'Unknown')
+            dataset_path = dataset_info.get('path', 'Path not found')
+            self.dataloader = DataLoaderHandlerKaggle(dataset_name, dataset_path)
 
 class MLPNN(nn.Module):
     def __init__(self, input_dim, num_neurons, num_classes):
@@ -84,7 +99,7 @@ class Trainer:
 
 if __name__ == "__main__":
     # Load dataset
-    dataloader = DataLoaderHandler(Config.DATASET_NAME)
+    dataloader = ChooseDataset(Config.DATASET_ORIGIN)
     input_dim, train_loader, test_loader = dataloader.input_dim, dataloader.train_loader, dataloader.test_loader
     
     # Initialize model, loss, optimizer

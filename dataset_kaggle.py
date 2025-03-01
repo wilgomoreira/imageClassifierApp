@@ -8,13 +8,14 @@ class Config:
     TRAIN_SIZE = 0.8
     BATCH_SIZE = 32
     ROOT = "./data_kaggle"
-    DATASET_PATH_KAGGLE = {'FIRE': 'phylake1337/fire-dataset'}   
+    DATASET_PATH_KAGGLE = {'FIRE': 'phylake1337/fire-dataset'}
+    RESIZE_IMG = (256, 256)   # resize the image for this value
 
 class CustomImageDataset(Dataset):
     def __init__(self, root_dir):
         self.root_dir = root_dir
         self.transform = transforms.Compose([
-            transforms.Resize((256, 256)), 
+            transforms.Resize(Config.RESIZE_IMG), 
             transforms.ToTensor(),
             transforms.Normalize((0.5,), (0.5,))
         ])

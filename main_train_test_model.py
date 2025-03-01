@@ -39,7 +39,7 @@ class MLPNN(nn.Module):
         self.fc2 = nn.Linear(num_neurons, num_classes)  
     
     def forward(self, x):
-        x = x.view(x.size(0), -1)  
+        x = x.reshape(x.size(0), -1)  
         x = torch.relu(self.fc1(x))
         return self.fc2(x)
 

@@ -11,10 +11,9 @@ class BinaryKDE:
         self.kde_neg = KernelDensity(kernel=KERNEL, bandwidth=BANDWIDTH).fit(self.logits_neg.reshape(-1, 1))
 
         self.logits_test = logits_test
-        self.compute_posterior()
-
+        self.posterior_probs = self._compute_posterior_prob()
     
-    def compute_posterior(self):
+    def _compute_posterior_prob(self):
         # Log-likelihoods
         log_probs_pos = self.kde_pos.score_samples(self.logits_test.reshape(-1, 1))  
         log_probs_neg = self.kde_neg.score_samples(self.logits_test.reshape(-1, 1)) 
@@ -22,8 +21,8 @@ class BinaryKDE:
         likelihoods_pos = np.exp(log_probs_pos)
         likelihoods_neg = np.exp(log_probs_neg)
 
-        evidence = likelihoods_pos + likelihoods_neg
-        evidence = np.where(evidence == 0, 1e-10, evidence)
+        epsylon = 1e-7
 
-        self.posterior_probs = likelihoods_pos / evidence
+        return (likelihoods_pos + epsylon) / ((likelihoods_pos + epsylon) + (likelihoods_neg + epsylon))
+
     

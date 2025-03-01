@@ -6,11 +6,14 @@ from PIL import Image, ImageTk
 from dataset import DataLoaderHandler  
 from main_train_test_model import MLPNN, Config  
 
+THRESHOLD = 0.5
+
+#OPTIONS OF GUI: gradio, streamlit, customtkinter, kivy, pyqt5, PySimpleGUI
 
 class ImageClassifierApp:
     def __init__(self, root, dataset_name):
         self.root = root
-        self.root.title("Image Classifier")
+        self.root.title('Image Classifier')
         self.root.geometry("400x500")
         self.root.configure(bg="#2C3E50")
         
@@ -36,7 +39,7 @@ class ImageClassifierApp:
         self.btn_exit.pack(pady=5)
     
     def load_model(self, input_dim, num_neurons, num_classes):
-        DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model = MLPNN(input_dim, num_neurons, num_classes).to(DEVICE)
         model.load_state_dict(torch.load(Config.MODEL_FILE, map_location=DEVICE))
         model.eval()
@@ -52,7 +55,7 @@ class ImageClassifierApp:
         with torch.no_grad():
             logits = self.model(image_tensor.view(1, -1))
             probability = torch.sigmoid(logits).item()
-            prediction = 1 if probability > 0.5 else 0
+            prediction = 1 if probability > THRESHOLD else 0
         return prediction, probability
     
     def load_sample_image(self):

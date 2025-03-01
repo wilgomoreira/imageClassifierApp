@@ -8,17 +8,13 @@ class Config:
     TRAIN_SIZE = 0.8
     BATCH_SIZE = 32
     ROOT = "./data_kaggle"
-    DATASET_KAGGLE = {'name': 'FIRE', 'path': 'https://www.kaggle.com/datasets/phylake1337/fire-dataset'}   
-
-def download_and_extract_kaggle_dataset(dataset_name, kaggle_dataset_path, extract_path=Config.ROOT):
-    os.makedirs(extract_path, exist_ok=True)
-    kaggle.api.dataset_download_files(kaggle_dataset_path, path=extract_path, unzip=True)
-    print(f"Dataset {dataset_name} downloaded and extract it in {extract_path}")
+    DATASET_PATH_KAGGLE = {'FIRE': 'phylake1337/fire-dataset'}   
 
 class CustomImageDataset(Dataset):
-    def __init__(self, root_dir, transform=None):
+    def __init__(self, root_dir):
         self.root_dir = root_dir
-        self.transform = transform if transform else transforms.Compose([
+        self.transform = transforms.Compose([
+            transforms.Resize((256, 256)), 
             transforms.ToTensor(),
             transforms.Normalize((0.5,), (0.5,))
         ])
@@ -48,15 +44,42 @@ class CustomImageDataset(Dataset):
 class DataLoaderHandler:
     def __init__(self, dataset_name, kaggle_dataset_path):
         self.dataset_name = dataset_name
-        self.dataset_path = os.path.join(Config.ROOT, dataset_name)
+        self.extract_path = Config.ROOT
         
-        if not os.path.exists(self.dataset_path):
-            download_and_extract_kaggle_dataset(dataset_name, kaggle_dataset_path, self.dataset_path)
+        # Download the dataset if it does not exist
+        if not os.path.exists(self.extract_path):
+            self.download_and_extract_kaggle_dataset(kaggle_dataset_path)
+
+        # Dynamically identify the extracted dataset folder
+        self.dataset_path = self.get_extracted_dataset_path()
         
         self.dataset = CustomImageDataset(self.dataset_path)
         self.input_dim = self._get_input_dim()
         self.train_data, self.test_data = self._split_dataset()
         self.train_loader, self.test_loader = self._create_dataloaders()
+
+    def download_and_extract_kaggle_dataset(self, kaggle_dataset_path):
+        os.makedirs(self.extract_path, exist_ok=True)
+        kaggle.api.dataset_download_files(kaggle_dataset_path, path=self.extract_path, unzip=True)
+        print(f"Dataset {self.dataset_name} downloaded and extracted in {self.extract_path}")
+
+    def get_extracted_dataset_path(self):
+        """ Dynamically identifies the name of the extracted dataset folder """
+        subdirs = [d for d in os.listdir(self.extract_path) if os.path.isdir(os.path.join(self.extract_path, d))]
+        
+        if len(subdirs) == 0:
+            raise FileNotFoundError(f"No folder found in {self.extract_path}. Check dataset extraction.")
+        
+        # If there is only one extracted directory, assume it is the dataset
+        if len(subdirs) == 1:
+            dataset_dir = subdirs[0]
+        else:
+            # If multiple folders exist, try finding the correct one
+            dataset_dir = next((d for d in subdirs if self.dataset_name.lower() in d.lower()), subdirs[0])
+
+        dataset_path = os.path.join(self.extract_path, dataset_dir)
+        print(f"Dataset path identified: {dataset_path}")
+        return dataset_path
 
     def _get_input_dim(self):
         example_image, _ = self.dataset[0]

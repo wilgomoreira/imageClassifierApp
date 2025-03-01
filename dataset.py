@@ -7,18 +7,13 @@ class Config:
     BATCH_SIZE = 32
     ROOT = "./data"
 
-class Transform:
-    @staticmethod
-    def get_transform():
-        return transforms.Compose([
+class BinaryDataset:
+    def __init__(self, dataset_name):
+        self.dataset_name = dataset_name
+        self.transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize((0.5,), (0.5,))
         ])
-
-class BinaryDataset:
-    def __init__(self, dataset_name, transform=None):
-        self.dataset_name = dataset_name
-        self.transform = transform if transform else Transform.get_transform()
         self.dataset = self._load_dataset()
     
     def _load_dataset(self):

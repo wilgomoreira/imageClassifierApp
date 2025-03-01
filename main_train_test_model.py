@@ -7,27 +7,30 @@ from dataset_kaggle import Config as ConfigDataKaggle
 import numpy as np
 
 class Config:
-    DIR_LOGITS_LABELS = "logits_labels/"
+    DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    DIR_LOGITS_LABELS = 'logits_labels/'
     MODEL_FILE = 'model_saved/mpl_model.pth'
     N_NEURONS = 128
     N_CLASSES = 1  # BINARY: 1, OTHERS: NUMBER OF CLASSES
     NUM_EPOCHS = 5
     LEARNING_RATE = 0.001
-    DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     DATASET_ORIGIN = 'KAGGLE' # PYTORCH, KAGGLE
     DATASET_NAME_PYTORCH = 'CIFAR10'  # BINARY DATASET: MNIST, FashionMNIST, CIFAR10
-    DATASET_NAME_KAGGLE = 'FIRE'
+    DATASET_NAME_KAGGLE = 'FIRE'   # FIRE
 
 class ChooseDataset:
     def __init__(self, dataset_origin):
         if dataset_origin == 'PYTORCH':
             dataset_name = Config.DATASET_NAME_PYTORCH
-            self.dataloader = DataLoaderHandler(dataset_name)
+            dataloader = DataLoaderHandler(dataset_name)
         else:
-            dataset_info = ConfigDataKaggle.DATASET_KAGGLE.get(Config.DATASET_NAME_KAGGLE, {})
-            dataset_name = dataset_info.get('name', 'Unknown')
-            dataset_path = dataset_info.get('path', 'Path not found')
-            self.dataloader = DataLoaderHandlerKaggle(dataset_name, dataset_path)
+            dataset_name = Config.DATASET_NAME_KAGGLE
+            dataset_path = ConfigDataKaggle.DATASET_PATH_KAGGLE.get(dataset_name, {})
+            dataloader = DataLoaderHandlerKaggle(dataset_name, dataset_path)
+
+        self.input_dim = dataloader.input_dim
+        self.train_loader = dataloader.train_loader
+        self.test_loader = dataloader.test_loader
 
 class MLPNN(nn.Module):
     def __init__(self, input_dim, num_neurons, num_classes):
@@ -97,27 +100,32 @@ class Trainer:
         np.save(f'{Config.DIR_LOGITS_LABELS}test_labels.npy', test_labels)
         print("logits and labels were saved successfully!")
 
-if __name__ == "__main__":
-    # Load dataset
-    dataloader = ChooseDataset(Config.DATASET_ORIGIN)
-    input_dim, train_loader, test_loader = dataloader.input_dim, dataloader.train_loader, dataloader.test_loader
-    
-    # Initialize model, loss, optimizer
-    model = MLPNN(input_dim, Config.N_NEURONS, Config.N_CLASSES)
-    criterion = nn.BCEWithLogitsLoss()
-    optimizer = optim.Adam(model.parameters(), lr=Config.LEARNING_RATE)
-    
-    # Train and evaluate
-    trainer = Trainer(model, criterion, optimizer, train_loader, test_loader)
-    trainer.train()
-    trainer.test()
+class RunTraining:
+    def __init__(self):
+        # Load dataset
+        dataset = ChooseDataset(Config.DATASET_ORIGIN)
+        input_dim, train_loader, test_loader = dataset.input_dim, dataset.train_loader, dataset.test_loader
+        
+        # Initialize model, loss, optimizer
+        model = MLPNN(input_dim, Config.N_NEURONS, Config.N_CLASSES)
+        criterion = nn.BCEWithLogitsLoss()
+        optimizer = optim.Adam(model.parameters(), lr=Config.LEARNING_RATE)
+        
+        # Train and evaluate
+        trainer = Trainer(model, criterion, optimizer, train_loader, test_loader)
+        trainer.train()
+        trainer.test()
 
-    # Save the trained model
-    trainer.save_model(Config.MODEL_FILE)
-    
-    # Generate logits and labels, then save them
-    train_logits, train_labels = trainer.get_logits_labels(train_loader)
-    test_logits, test_labels = trainer.get_logits_labels(test_loader)
-    trainer.save_logits_labels(train_logits, train_labels, test_logits, test_labels)
-    
+        # Save the trained model
+        trainer.save_model(Config.MODEL_FILE)
+        
+        # Generate logits and labels, then save them
+        train_logits, train_labels = trainer.get_logits_labels(train_loader)
+        test_logits, test_labels = trainer.get_logits_labels(test_loader)
+        trainer.save_logits_labels(train_logits, train_labels, test_logits, test_labels)    
+
+if __name__ == "__main__":
+    RunTraining()
     print("FINISH!!")
+    
+    

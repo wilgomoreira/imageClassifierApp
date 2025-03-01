@@ -21,7 +21,6 @@ class PostProcessing:
         self._divide_classes_from_model()
         self._run_analysis()
          
-    
     def _load_data(self):
         os.makedirs(self.OUTPUT_DIR, exist_ok=True)
         os.makedirs(self.PLOTS_DIR, exist_ok=True)
@@ -46,11 +45,15 @@ class PostProcessing:
         return class_logits
 
     def _run_analysis(self):
+        # Baseline of logits and likelihoods
         self._generate_histograms(self.classes_test_logits, 'logit', '1')
         likelihoods = self._convert_logits_to_likelihoods(self.classes_test_logits)
-        
         self._generate_histograms(likelihoods, 'likelihood', '2')
+        
+        # Using KDE approach
         kde = BinaryKDE(self.classes_train_logits, self.test_logits)
+        
+        # Evaluate baseline with KDE
         self._compute_metrics(self.test_logits, kde.posterior_probs, self.test_labels, 'METRICS IN TEST TIME')
     
     def _generate_histograms(self, data_dict, name, identifier):
@@ -68,11 +71,15 @@ class PostProcessing:
     
     def _compute_metrics(self, logits, enhanced_probs, labels, name):
         true_labels = labels.flatten()
+        
+        # Baseline
         baseline_probs = self._logits_to_likelihoods(logits.flatten())
         metrics_baseline = self._calculate_metrics(true_labels, baseline_probs)
         
+        # Other approach
         metrics_enhanced = self._calculate_metrics(true_labels, enhanced_probs.flatten())
         result_text = self._format_metrics(name, metrics_baseline, metrics_enhanced)
+
         self._save_results(result_text, f'{name.lower()}.txt')
     
     def _calculate_metrics(self, true_labels, probs):

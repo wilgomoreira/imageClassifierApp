@@ -21,12 +21,14 @@ class MLPNN(nn.Module):
     def __init__(self, input_dim, num_neurons=128, num_classes=1):
         super(MLPNN, self).__init__()
         self.fc1 = nn.Linear(input_dim, num_neurons)
-        self.fc2 = nn.Linear(num_neurons, num_classes)  
+        self.fc2 = nn.Linear(num_neurons, num_neurons)
+        self.fc3 = nn.Linear(num_neurons, num_classes)
     
     def forward(self, x):
-        x = x.reshape(x.size(0), -1)  
+        x = x.reshape(x.size(0), -1)
         x = torch.relu(self.fc1(x))
-        return self.fc2(x)
+        x = torch.relu(self.fc2(x))
+        return self.fc3(x)
 
 class Trainer:
     def __init__(self, model, criterion, optimizer, train_loader, test_loader):
@@ -38,13 +40,16 @@ class Trainer:
         self.train_loader = train_loader
         self.test_loader = test_loader
     
-    def train(self, n_epochs=5):  
+    def train(self, n_epochs=15):  
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         for epoch in range(n_epochs):
             self.model.train()
             running_loss = 0.0
-            for images, labels in self.train_loader:
+            
+            progress_bar = tqdm(self.train_loader, desc=f"Epoch {epoch+1}/{n_epochs}", leave=False)
+            
+            for images, labels in progress_bar:
                 images, labels = images.to(device), labels.to(device).float().view(-1, 1)
                 self.optimizer.zero_grad()
                 logit_outputs = self.model(images)
@@ -52,6 +57,9 @@ class Trainer:
                 loss.backward()
                 self.optimizer.step()
                 running_loss += loss.item()
+                
+                progress_bar.set_postfix(loss=running_loss / (progress_bar.n + 1))
+            
             print(f"Epoch {epoch+1}/{n_epochs}, Loss: {running_loss/len(self.train_loader):.4f}")
     
     def test(self, threshold=0.5):
@@ -72,6 +80,7 @@ class Trainer:
     
     def save_model(self, path='model_saved/mpl_model.pth'):
         torch.save(self.model.state_dict(), path)
+        print("model was saved successfully!")
 
     def get_logits_labels(self, data_loader):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -93,6 +102,11 @@ class Trainer:
         np.save(f'{dir_logits_labels}test_labels.npy', test_labels)
         print("logits and labels were saved successfully!")
 
+def init_weights(m):
+    if isinstance(m, torch.nn.Linear):
+        torch.nn.init.xavier_uniform_(m.weight)
+        torch.nn.init.zeros_(m.bias)
+
 class RunTraining:
     def __init__(self, user_dataset):
         # Load dataset
@@ -101,9 +115,10 @@ class RunTraining:
         
         # Initialize model, loss, optimizer
         model = MLPNN(input_dim)
+        model.apply(init_weights) 
         criterion = nn.BCEWithLogitsLoss()
-        optimizer = optim.Adam(model.parameters(), lr=0.001)
-        
+        optimizer = optim.Adam(model.parameters(), lr=0.0001, betas=(0.9, 0.999))
+
         # Train and evaluate
         trainer = Trainer(model, criterion, optimizer, train_loader, test_loader)
         trainer.train()

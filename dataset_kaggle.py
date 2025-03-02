@@ -63,7 +63,7 @@ class DataLoaderHandlerKaggle:
         print(f"Dataset {self.dataset_name} downloaded and extracted in {self.extract_path}")
 
     def get_extracted_dataset_path(self):
-        """ Dynamically identifies the name of the extracted dataset folder """
+        # Dynamically identifies the name of the extracted dataset folder
         subdirs = [d for d in os.listdir(self.extract_path) if os.path.isdir(os.path.join(self.extract_path, d))]
         
         if len(subdirs) == 0:

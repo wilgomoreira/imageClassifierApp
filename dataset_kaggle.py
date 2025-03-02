@@ -4,18 +4,15 @@ from torch.utils.data import DataLoader, random_split, Dataset
 from torchvision import transforms
 from PIL import Image
 
-class Config:
-    TRAIN_SIZE = 0.8
-    BATCH_SIZE = 32
-    ROOT = "./data_kaggle"
-    DATASET_PATH_KAGGLE = {'FIRE': 'phylake1337/fire-dataset'}
-    RESIZE_IMG = (256, 256)   # resize the image for this value
+# dict with all dataset in this code (name and path)
+dataset_path_dict = {'FIRE': 'phylake1337/fire-dataset'
+}
 
 class CustomImageDataset(Dataset):
-    def __init__(self, root_dir):
+    def __init__(self, root_dir, resize_img=(256, 256)):
         self.root_dir = root_dir
         self.transform = transforms.Compose([
-            transforms.Resize(Config.RESIZE_IMG), 
+            transforms.Resize(resize_img), 
             transforms.ToTensor(),
             transforms.Normalize((0.5,), (0.5,))
         ])
@@ -42,10 +39,11 @@ class CustomImageDataset(Dataset):
         
         return image, label
 
-class DataLoaderHandler:
-    def __init__(self, dataset_name, kaggle_dataset_path):
+class DataLoaderHandlerKaggle:
+    def __init__(self, dataset_name, root='./data_kaggle'):
+        self.extract_path = root
         self.dataset_name = dataset_name
-        self.extract_path = Config.ROOT
+        kaggle_dataset_path = dataset_path_dict[dataset_name]
         
         # Download the dataset if it does not exist
         if not os.path.exists(self.extract_path):
@@ -88,12 +86,12 @@ class DataLoaderHandler:
         print(f"Dataset: {self.dataset_name} | Channels: {num_channels} | Height: {height} | Width: {width}")
         return num_channels * height * width
 
-    def _split_dataset(self):
-        train_size = int(Config.TRAIN_SIZE * len(self.dataset))
+    def _split_dataset(self, train_split=0.8):
+        train_size = int(train_split * len(self.dataset))
         test_size = len(self.dataset) - train_size
         return random_split(self.dataset, [train_size, test_size])
 
-    def _create_dataloaders(self):
-        train_loader = DataLoader(self.train_data, batch_size=Config.BATCH_SIZE, shuffle=True)
-        test_loader = DataLoader(self.test_data, batch_size=Config.BATCH_SIZE, shuffle=False)
+    def _create_dataloaders(self, batch_size=32):
+        train_loader = DataLoader(self.train_data, batch_size=batch_size, shuffle=True)
+        test_loader = DataLoader(self.test_data, batch_size=batch_size, shuffle=False)
         return train_loader, test_loader

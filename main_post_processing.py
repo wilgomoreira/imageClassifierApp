@@ -5,27 +5,18 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 from netcal.metrics import ECE
 from sklearn.metrics import accuracy_score, f1_score, average_precision_score
-from main_train_test_model import Config
 from inter_prob import BinaryKDE
 
 class PostProcessing:
-    THRESHOLD = 0.5
-    OUTPUT_DIR = 'results'
-    PLOTS_DIR = 'plots_and_histograms'
-    BIN_ECE = 10
-    BIN_HIST = 30
-    ROUND = 2
-    
     def __init__(self):
         self._load_data()
         self._divide_classes_from_model()
         self._run_analysis()
          
-    def _load_data(self):
-        os.makedirs(self.OUTPUT_DIR, exist_ok=True)
-        os.makedirs(self.PLOTS_DIR, exist_ok=True)
+    def _load_data(self, out_dir='results', dir_logits_labels='logits_labels/'):
+        os.makedirs(out_dir, exist_ok=True)
+        os.makedirs(out_dir, exist_ok=True)
 
-        dir_logits_labels = Config.DIR_LOGITS_LABELS
         self.train_logits = np.load(f'{dir_logits_labels}train_logits.npy')
         self.train_labels = np.load(f'{dir_logits_labels}train_labels.npy')
         
@@ -56,22 +47,21 @@ class PostProcessing:
         # Evaluate baseline with KDE
         self._compute_metrics(self.test_logits, kde.posterior_probs, self.test_labels, 'METRICS IN TEST TIME')
     
-    def _generate_histograms(self, data_dict, name, identifier):
+    def _generate_histograms(self, data_dict, name, identifier, plot_dir='plots_and_histograms', bin=20):
         plt.figure(figsize=(8, 6))
         for cls, data in data_dict.items():
-            plt.hist(data.flatten(), bins=self.BIN_HIST, histtype='step', linewidth=1.5, label=f'Class {cls}', density=True)
+            plt.hist(data.flatten(), bins=bin, histtype='step', linewidth=1.5, label=f'Class {cls}', density=True)
         
         plt.xlabel(name)
         plt.ylabel('Frequency')
         plt.gca().yaxis.set_minor_locator(MultipleLocator(1))
         plt.legend(loc='upper right')
         plt.title(f'Histogram of {name}')
-        plt.savefig(f"{self.PLOTS_DIR}/{identifier}_{name}_histogram.pdf")
+        plt.savefig(f"{plot_dir}/{identifier}_{name}_histogram.pdf")
         plt.close()
     
     def _compute_metrics(self, logits, enhanced_probs, labels, name):
         true_labels = labels.flatten()
-        
         # Baseline
         baseline_probs = self._logits_to_likelihoods(logits.flatten())
         metrics_baseline = self._calculate_metrics(true_labels, baseline_probs)
@@ -82,13 +72,13 @@ class PostProcessing:
 
         self._save_results(result_text, f'{name.lower()}.txt')
     
-    def _calculate_metrics(self, true_labels, probs):
-        predicted_labels = (probs > self.THRESHOLD).astype(int)
+    def _calculate_metrics(self, true_labels, probs, threshold=0.5, bin=10):
+        predicted_labels = (probs > threshold).astype(int)
         return {
             'accuracy': accuracy_score(true_labels, predicted_labels),
             'f1_score': f1_score(true_labels, predicted_labels),
             'avg_precision': average_precision_score(true_labels, probs),
-            'ece': ECE(bins=self.BIN_ECE).measure(probs, true_labels)
+            'ece': ECE(bins=bin).measure(probs, true_labels)
         }
     
     def _format_metrics(self, name, baseline, enhanced):
@@ -110,11 +100,11 @@ class PostProcessing:
     def _convert_logits_to_likelihoods(self, class_dict):
         return {cls: self._logits_to_likelihoods(logits) for cls, logits in class_dict.items()}
     
-    def _percent_format(self, number):
-        return round(100 * number, self.ROUND)
+    def _percent_format(self, number, round_number=2):
+        return round(100 * number, round_number)
     
-    def _save_results(self, text, filename):
-        with open(os.path.join(self.OUTPUT_DIR, filename), 'w') as f:
+    def _save_results(self, text, filename, output_dir='results'):
+        with open(os.path.join(output_dir, filename), 'w') as f:
             f.write(text)
 
 if __name__ == "__main__":

@@ -2,11 +2,6 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 from torch.utils.data import DataLoader, random_split
 
-class Config:
-    TRAIN_SIZE = 0.8
-    BATCH_SIZE = 32
-    ROOT = "./data"
-
 class BinaryDataset:
     def __init__(self, dataset_name):
         self.dataset_name = dataset_name
@@ -27,19 +22,19 @@ class BinaryDataset:
             case _:
                 raise ValueError(f"Dataset '{self.dataset_name}' unknown.")
 
-    def _mnist_binary(self):
-        dataset = datasets.MNIST(root=Config.ROOT, train=True, transform=self.transform, download=True)
+    def _mnist_binary(self, root='./data'):
+        dataset = datasets.MNIST(root=root, train=True, transform=self.transform, download=True)
         return [(img, 1 if label == 1 else 0) for img, label in dataset if label in [0, 1]]
 
-    def _fashion_mnist_binary(self):
-        dataset = datasets.FashionMNIST(root=Config.ROOT, train=True, transform=self.transform, download=True)
+    def _fashion_mnist_binary(self, root='./data'):
+        dataset = datasets.FashionMNIST(root=root, train=True, transform=self.transform, download=True)
         return [(img, 1 if label == 7 else 0) for img, label in dataset if label in [0, 7]]
 
-    def _cifar10_binary(self):
-        dataset = datasets.CIFAR10(root=Config.ROOT, train=True, transform=self.transform, download=True)
+    def _cifar10_binary(self, root='./data'):
+        dataset = datasets.CIFAR10(root=root, train=True, transform=self.transform, download=True)
         return [(img, 1 if label == 5 else 0) for img, label in dataset if label in [3, 5]]
 
-class DataLoaderHandler:
+class DataLoaderHandlerPytorch:
     def __init__(self, dataset_name):
         self.dataset_name = dataset_name
         self.binary_dataset = BinaryDataset(dataset_name).dataset
@@ -53,12 +48,12 @@ class DataLoaderHandler:
         print(f"Dataset: {self.dataset_name} | Channels: {num_channels} | Height: {height} | Width: {width}")
         return num_channels * height * width
 
-    def _split_dataset(self):
-        train_size = int(Config.TRAIN_SIZE * len(self.binary_dataset))
+    def _split_dataset(self, train_split=0.8):
+        train_size = int(train_split * len(self.binary_dataset))
         test_size = len(self.binary_dataset) - train_size
         return random_split(self.binary_dataset, [train_size, test_size])
 
-    def _create_dataloaders(self):
-        train_loader = DataLoader(self.train_data, batch_size=Config.BATCH_SIZE, shuffle=True)
-        test_loader = DataLoader(self.test_data, batch_size=Config.BATCH_SIZE, shuffle=False)
+    def _create_dataloaders(self, batch_size=32):
+        train_loader = DataLoader(self.train_data, batch_size=batch_size, shuffle=True)
+        test_loader = DataLoader(self.test_data, batch_size=batch_size, shuffle=False)
         return train_loader, test_loader

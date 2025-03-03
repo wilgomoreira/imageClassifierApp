@@ -18,11 +18,11 @@ class ArgumentParserHandler:
         self._add_arguments()
 
     def _add_arguments(self):
-        self.parser.add_argument("--origin_data", type=str, choices=["PYTORCH", "KAGGLE"], default="KAGGLE",
+        self.parser.add_argument("--origin_data", type=str, choices=['PYTORCH', 'KAGGLE'], default='KAGGLE',
                                  help="Choose the dataset source: PYTORCH or KAGGLE.")
-        self.parser.add_argument("--pytorch_data", type=str, choices=["MNIST", "FashionMNIST", "CIFAR10"], default="CIFAR10",
+        self.parser.add_argument("--pytorch_data", type=str, choices=['MNIST', 'FashionMNIST', 'CIFAR10'], default='CIFAR10',
                                  help="Select a dataset from PYTORCH (only used if dataset_origin is PYTORCH).")
-        self.parser.add_argument("--kaggle_data", type=str, choices=["FIRE"], default="FIRE",
+        self.parser.add_argument("--kaggle_data", type=str, choices=['FIRE', 'CATS_AND_DOGS'], default='CATS_AND_DOGS',
                                  help="Select a dataset from KAGGLE (only used if dataset_origin is KAGGLE).")
         self.parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs.")
         self.parser.add_argument("--lr", type=int, default=0.0001, help="learning rate of training.")

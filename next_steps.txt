@@ -1,4 +1,3 @@
-1 - Add parameters in terminal run
-2 - Use my KDE. I am using KDE library and I am having strange results
-3 - Include more classes
-4 - Test on other datasets
+1 - Use my KDE. I am using KDE library and I am having strange results
+2 - Include more classes (change sigmoid for softmax e change all train)
+3 - Test on other datasets

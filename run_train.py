@@ -1,3 +1,4 @@
+import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -11,12 +12,31 @@ from model import MLPNN
 # PYTORCH DATA: MNIST, FashionMNIST, CIFAR10
 # KAGGLE DATA: FIRE
 
+class ArgumentParserHandler:
+    def __init__(self):
+        self.parser = argparse.ArgumentParser(description="Train a neural network on a selected dataset.")
+        self._add_arguments()
+
+    def _add_arguments(self):
+        self.parser.add_argument("--origin_data", type=str, choices=["PYTORCH", "KAGGLE"], default="KAGGLE",
+                                 help="Choose the dataset source: PYTORCH or KAGGLE.")
+        self.parser.add_argument("--pytorch_data", type=str, choices=["MNIST", "FashionMNIST", "CIFAR10"], default="CIFAR10",
+                                 help="Select a dataset from PYTORCH (only used if dataset_origin is PYTORCH).")
+        self.parser.add_argument("--kaggle_data", type=str, choices=["FIRE"], default="FIRE",
+                                 help="Select a dataset from KAGGLE (only used if dataset_origin is KAGGLE).")
+        self.parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs.")
+        self.parser.add_argument("--lr", type=int, default=0.0001, help="learning rate of training.")
+        self.parser.add_argument("--threshold", type=float, default=0.5, help="Threshold for classification during testing.")
+
+    def parse_arguments(self):
+        return self.parser.parse_args()
+
 class Trainer:
-    def __init__(self, oring_data='KAGGLE', pytorch_data='CIFAR10', kaggle_data='FIRE',
+    def __init__(self, origin_data='KAGGLE', pytorch_data='CIFAR10', kaggle_data='FIRE',
                  model=MLPNN, learning_rate=0.0001, betas=(0.9, 0.999)):
         
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.input_dim, self.train_loader, self.test_loader = self._select_dataset(oring_data, pytorch_data, kaggle_data)  
+        self.input_dim, self.train_loader, self.test_loader = self._select_dataset(origin_data, pytorch_data, kaggle_data)  
         self.model =  model(self.input_dim).to(self.device).apply(self._weight_initializer)   
         self.criterion = nn.BCEWithLogitsLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate, betas=betas)
@@ -34,12 +54,12 @@ class Trainer:
             nn.init.xavier_uniform_(m.weight)
             nn.init.zeros_(m.bias)
     
-    def train(self, n_epochs=5):  
-        for epoch in range(n_epochs):
+    def train(self, epochs=5):  
+        for epoch in range(epochs):
             self.model.train()
             running_loss = 0.0
             
-            progress_bar = tqdm(self.train_loader, desc=f"Epoch {epoch+1}/{n_epochs}", leave=False)
+            progress_bar = tqdm(self.train_loader, desc=f"Epoch {epoch+1}/{epochs}", leave=False)
             
             for images, labels in progress_bar:
                 images, labels = images.to(self.device), labels.to(self.device).float().view(-1, 1)
@@ -52,7 +72,7 @@ class Trainer:
                 
                 progress_bar.set_postfix(loss=running_loss / (progress_bar.n + 1))
             
-            print(f"Epoch {epoch+1}/{n_epochs}, Loss: {running_loss/len(self.train_loader):.4f}")
+            print(f"Epoch {epoch+1}/{epochs}, Loss: {running_loss/len(self.train_loader):.4f}")
     
     def test(self, threshold=0.5):
         self.model.eval()
@@ -103,9 +123,15 @@ class Trainer:
         print("model was saved successfully!")
 
 if __name__ == "__main__":
-    trainer = Trainer()
-    trainer.train()
-    trainer.test()
+    args_handler = ArgumentParserHandler()
+    args = args_handler.parse_arguments()
+    
+    trainer = Trainer(origin_data=args.origin_data, 
+                      pytorch_data=args.pytorch_data, 
+                      kaggle_data=args.kaggle_data,
+                      learning_rate=args.lr) 
+    trainer.train(args.epochs)
+    trainer.test(args.threshold)
         
     trainer.get_logits_labels()
     trainer.save_logits_labels_model()

@@ -9,6 +9,8 @@ dataset_path_dict = {'FIRE': 'phylake1337/fire-dataset',
 }
 
 class CustomImageDataset(Dataset):
+    
+
     def __init__(self, root_dir, resize_img=(256, 256)):
         self.root_dir = root_dir
         self.transform = transforms.Compose([

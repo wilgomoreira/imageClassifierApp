@@ -4,7 +4,13 @@ from model import MLPNN
 import torchvision.transforms as transforms
 
 class ImageClassificationApp:
-    def __init__(self, classes=('CAT', 'DOG')):
+    title: str
+    description: str
+    classes: tuple
+    model: torch
+    interface: gr
+
+    def __init__(self, classes=('FIRE', 'NON FIRE')):
         self.title = f'{classes[0]} or {classes[1]} Detection'
         self.description = f'Upload an image to classify it as {classes[0]} or {classes[1]}.'
         self.classes = classes

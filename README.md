@@ -1,15 +1,15 @@
-# Neural Network Training with PyTorch and Kaggle Datasets
+# Neural Network Training with Torch and Kaggle Datasets
 
 ## Overview
-This project provides a framework to train a **binary classifier** neural network using different datasets from PyTorch and Kaggle. The training pipeline allows for dataset selection, model training, evaluation, and saving the model along with logits and labels.
-# Neural Network Training with PyTorch and Kaggle Datasets
+This project provides a framework to train a **binary classifier** neural network using different datasets from Torch and Kaggle. The training pipeline allows for dataset selection, model training, evaluation, and saving the model along with logits and labels.
+# Neural Network Training with Torch and Kaggle Datasets
 
 ## Overview
-This project provides a framework to train a **binary classifier** neural network using different datasets from PyTorch and Kaggle. The training pipeline allows for dataset selection, model training, evaluation, and saving the model along with logits and labels.
+This project provides a framework to train a **binary classifier** neural network using different datasets from Torch and Kaggle. The training pipeline allows for dataset selection, model training, evaluation, and saving the model along with logits and labels.
 
 ## Features
 - Supports multiple datasets:
-  - **PyTorch datasets**: MNIST, FashionMNIST, CIFAR10
+  - **Torch datasets**: MNIST, FashionMNIST, CIFAR10
   - **Kaggle datasets**: FIRE
 - Implements a **Multi-Layer Perceptron (MLP)** neural network for **binary classification**.
 - Provides an **argument parser** for easy configuration.
@@ -42,8 +42,8 @@ python train.py --origin_data KAGGLE --kaggle_data FIRE --epochs 10 --lr 0.001 -
 ### Arguments
 | Argument | Type | Default | Description |
 |----------|------|---------|-------------|
-| `--origin_data` | `str` | KAGGLE | Data source: `PYTORCH` or `KAGGLE`. |
-| `--pytorch_data` | `str` | CIFAR10 | Dataset from PyTorch (MNIST, FashionMNIST, CIFAR10). |
+| `--origin_data` | `str` | KAGGLE | Data source: `TORCH` or `KAGGLE`. |
+| `--torch_data` | `str` | CIFAR10 | Dataset from Torch (MNIST, FashionMNIST, CIFAR10). |
 | `--kaggle_data` | `str` | FIRE | Dataset from Kaggle (FIRE). |
 | `--epochs` | `int` | 5 | Number of training epochs. |
 | `--lr` | `float` | 0.0001 | Learning rate. |

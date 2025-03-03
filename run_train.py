@@ -2,27 +2,30 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from dataset import DataLoaderHandlerPytorch
+from torch.utils.data import DataLoader
+from dataset_torch import DataLoaderHandlerTorch
 from dataset_kaggle import DataLoaderHandlerKaggle
 import numpy as np
 from tqdm import tqdm
 from model import MLPNN
 
-# ORING DATA: PYTORCH, KAGGLE
-# PYTORCH DATA: MNIST, FashionMNIST, CIFAR10
+# ORING DATA: TORCH, KAGGLE
+# TORCH DATA: MNIST, FashionMNIST, CIFAR10
 # KAGGLE DATA: FIRE
 
 class ArgumentParserHandler:
+    parser: argparse
+
     def __init__(self):
         self.parser = argparse.ArgumentParser(description="Train a neural network on a selected dataset.")
         self._add_arguments()
 
     def _add_arguments(self):
-        self.parser.add_argument("--origin_data", type=str, choices=['PYTORCH', 'KAGGLE'], default='KAGGLE',
-                                 help="Choose the dataset source: PYTORCH or KAGGLE.")
-        self.parser.add_argument("--pytorch_data", type=str, choices=['MNIST', 'FashionMNIST', 'CIFAR10'], default='CIFAR10',
-                                 help="Select a dataset from PYTORCH (only used if dataset_origin is PYTORCH).")
-        self.parser.add_argument("--kaggle_data", type=str, choices=['FIRE', 'CATS_AND_DOGS'], default='CATS_AND_DOGS',
+        self.parser.add_argument("--origin_data", type=str, choices=['TORCH', 'KAGGLE'], default='KAGGLE',
+                                 help="Choose the dataset source: TORCH or KAGGLE.")
+        self.parser.add_argument("--torch_data", type=str, choices=['MNIST', 'FashionMNIST', 'CIFAR10'], default='CIFAR10',
+                                 help="Select a dataset from TORCH (only used if dataset_origin is TORCH).")
+        self.parser.add_argument("--kaggle_data", type=str, choices=['FIRE', 'CATS_AND_DOGS'], default='FIRE',
                                  help="Select a dataset from KAGGLE (only used if dataset_origin is KAGGLE).")
         self.parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs.")
         self.parser.add_argument("--lr", type=int, default=0.0001, help="learning rate of training.")
@@ -32,18 +35,30 @@ class ArgumentParserHandler:
         return self.parser.parse_args()
 
 class Trainer:
-    def __init__(self, origin_data='KAGGLE', pytorch_data='CIFAR10', kaggle_data='FIRE',
+    device: torch
+    input_dim: int
+    train_loader: DataLoader
+    test_loader: DataLoader
+    model: torch
+    criterion: nn
+    optimizer: optim
+    train_logits: np
+    train_labels: np
+    test_logits: np
+    test_labels: np
+
+    def __init__(self, origin_data='KAGGLE', torch_data='CIFAR10', kaggle_data='FIRE',
                  model=MLPNN, learning_rate=0.0001, betas=(0.9, 0.999)):
         
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.input_dim, self.train_loader, self.test_loader = self._select_dataset(origin_data, pytorch_data, kaggle_data)  
+        self.input_dim, self.train_loader, self.test_loader = self._select_dataset(origin_data, torch_data, kaggle_data)  
         self.model =  model(self.input_dim).to(self.device).apply(self._weight_initializer)   
         self.criterion = nn.BCEWithLogitsLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate, betas=betas)
 
-    def _select_dataset(self, oring_data, pytorch_data, kaggle_data): 
-        if oring_data == 'PYTORCH':
-            dataloader = DataLoaderHandlerPytorch(pytorch_data)
+    def _select_dataset(self, oring_data, torch_data, kaggle_data): 
+        if oring_data == 'TORCH':
+            dataloader = DataLoaderHandlerTorch(torch_data)
         else:
             dataloader = DataLoaderHandlerKaggle(kaggle_data)
 
@@ -127,7 +142,7 @@ if __name__ == "__main__":
     args = args_handler.parse_arguments()
     
     trainer = Trainer(origin_data=args.origin_data, 
-                      pytorch_data=args.pytorch_data, 
+                      torch_data=args.torch_data, 
                       kaggle_data=args.kaggle_data,
                       learning_rate=args.lr) 
     trainer.train(args.epochs)

@@ -2,6 +2,12 @@ import numpy as np
 from sklearn.neighbors import KernelDensity
 
 class BinaryKDE:
+    logits_pos: np
+    logits_neg: np
+    kde_pos: KernelDensity
+    kde_neg: KernelDensity
+    logits_test: np
+
     def __init__(self, classes_logits_train, logits_test, kernel='gaussian', bandwidth=0.5):
         self.logits_pos, self.logits_neg = classes_logits_train.values()
         self.kde_pos = KernelDensity(kernel=kernel, bandwidth=bandwidth).fit(self.logits_pos.reshape(-1, 1))

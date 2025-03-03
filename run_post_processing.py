@@ -8,6 +8,13 @@ from sklearn.metrics import accuracy_score, f1_score, average_precision_score
 from kde_inter_prob import BinaryKDE
 
 class PostProcessing:
+    train_logits: np
+    train_labels: np
+    test_logits: np
+    test_labels: np
+    classes_train_logits: dict
+    classes_test_logits: dict
+
     def __init__(self):
         self._load_data()
         self._divide_classes_from_model()
@@ -18,7 +25,6 @@ class PostProcessing:
 
         self.train_logits = np.load(f'{dir_logits_labels}train_logits.npy')
         self.train_labels = np.load(f'{dir_logits_labels}train_labels.npy')
-        
         self.test_logits = np.load(f'{dir_logits_labels}test_logits.npy')
         self.test_labels = np.load(f'{dir_logits_labels}test_labels.npy')
     

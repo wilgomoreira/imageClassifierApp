@@ -4,7 +4,6 @@ from torch.utils.data import DataLoader, random_split, Dataset
 from torchvision import transforms
 from PIL import Image
 
-# dict with all dataset in this code (name and path)
 dataset_path_dict = {'FIRE': 'phylake1337/fire-dataset'
 }
 
@@ -45,24 +44,22 @@ class DataLoaderHandlerKaggle:
         self.dataset_name = dataset_name
         kaggle_dataset_path = dataset_path_dict[dataset_name]
         
-        # Download the dataset if it does not exist
         if not os.path.exists(self.extract_path):
-            self.download_and_extract_kaggle_dataset(kaggle_dataset_path)
+            self._download_and_extract_kaggle_dataset(kaggle_dataset_path)
 
-        # Dynamically identify the extracted dataset folder
-        self.dataset_path = self.get_extracted_dataset_path()
+        self.dataset_path = self._get_extracted_dataset_path()
         
         self.dataset = CustomImageDataset(self.dataset_path)
         self.input_dim = self._get_input_dim()
         self.train_data, self.test_data = self._split_dataset()
         self.train_loader, self.test_loader = self._create_dataloaders()
 
-    def download_and_extract_kaggle_dataset(self, kaggle_dataset_path):
+    def _download_and_extract_kaggle_dataset(self, kaggle_dataset_path):
         os.makedirs(self.extract_path, exist_ok=True)
         kaggle.api.dataset_download_files(kaggle_dataset_path, path=self.extract_path, unzip=True)
         print(f"Dataset {self.dataset_name} downloaded and extracted in {self.extract_path}")
 
-    def get_extracted_dataset_path(self):
+    def _get_extracted_dataset_path(self):
         # Dynamically identifies the name of the extracted dataset folder
         subdirs = [d for d in os.listdir(self.extract_path) if os.path.isdir(os.path.join(self.extract_path, d))]
         

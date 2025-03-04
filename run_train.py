@@ -148,6 +148,6 @@ if __name__ == "__main__":
         
     trainer.get_logits_labels()
     trainer.save_logits_labels_model()
-    print("FINISH!!")
+    print("FINISHED!!")
     
     

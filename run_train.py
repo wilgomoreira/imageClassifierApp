@@ -75,7 +75,6 @@ class Trainer:
             running_loss = 0.0
             
             progress_bar = tqdm(self.train_loader, desc=f"Epoch {epoch+1}/{epochs}", leave=False)
-            
             for images, labels in progress_bar:
                 images, labels = images.to(self.device), labels.to(self.device).float().view(-1, 1)
                 self.optimizer.zero_grad()
@@ -86,7 +85,6 @@ class Trainer:
                 running_loss += loss.item()
                 
                 progress_bar.set_postfix(loss=running_loss / (progress_bar.n + 1))
-            
             print(f"Epoch {epoch+1}/{epochs}, Loss: {running_loss/len(self.train_loader):.4f}")
     
     def test(self, threshold=0.5):
@@ -94,7 +92,7 @@ class Trainer:
         correct = 0
         total = 0
         with torch.no_grad():
-            for images, labels in self.test_loader:
+            for images, labels in tqdm(self.test_loader, desc="Testing Model"):
                 images, labels = images.to(self.device), labels.to(self.device)
                 logits_outputs = self.model(images)
                 like_outputs = torch.sigmoid(logits_outputs)
@@ -108,7 +106,7 @@ class Trainer:
 
         train_logits, train_labels = [], []
         with torch.no_grad():
-            for images, lbls in self.train_loader:
+            for images, lbls in tqdm(self.train_loader, desc="Extracting Train Logits"):
                 images = images.to(self.device)
                 outputs = self.model(images)
                 train_logits.extend(outputs.cpu().numpy())
@@ -116,7 +114,7 @@ class Trainer:
         
         test_logits, test_labels = [], []
         with torch.no_grad():
-            for images, lbls in self.test_loader:
+            for images, lbls in tqdm(self.test_loader, desc="Extracting Test Logits"):
                 images = images.to(self.device)
                 outputs = self.model(images)
                 test_logits.extend(outputs.cpu().numpy())

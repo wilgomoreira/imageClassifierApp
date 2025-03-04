@@ -1,3 +1,4 @@
-1 - Use my KDE. I am using KDE library and I am having strange results
-2 - Include more classes (change sigmoid for softmax e change all train)
+- Include more classes (change sigmoid for softmax e change all train)
+- Include CNN and Segnet
+- Include other datasets
 

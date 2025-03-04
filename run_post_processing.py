@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 from netcal.metrics import ECE
 from sklearn.metrics import accuracy_score, f1_score, average_precision_score
-from kde_inter_prob import BinaryKDE
+from kde_inter_prob import sklearnKDE, misKDE
 
 class PostProcessing:
     train_logits: np
@@ -47,7 +47,7 @@ class PostProcessing:
         self._generate_histograms(likelihoods, 'likelihood', '2')
         
         # Using KDE approach
-        kde = BinaryKDE(self.classes_train_logits, self.test_logits)
+        kde = sklearnKDE(self.classes_train_logits, self.test_logits)
         posterior_probs = kde.compute_posterior_prob()
         
         # Evaluate baseline with KDE

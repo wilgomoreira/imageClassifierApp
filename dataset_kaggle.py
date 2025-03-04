@@ -5,11 +5,14 @@ from torchvision import transforms
 from PIL import Image, UnidentifiedImageError
 
 dataset_path_dict = {'FIRE': 'phylake1337/fire-dataset',
-                     'CATS_AND_DOGS': 'shaunthesheep/microsoft-catsvsdogs-dataset'
-}
+                     'CATS_AND_DOGS': 'shaunthesheep/microsoft-catsvsdogs-dataset'}
 
 class CustomImageDataset(Dataset):
-    
+    root_dir: str
+    transform: transforms
+    image_paths: list
+    labels: list
+    valid_extensions: list
 
     def __init__(self, root_dir, resize_img=(256, 256)):
         self.root_dir = root_dir
@@ -52,6 +55,16 @@ class CustomImageDataset(Dataset):
         return image, label
 
 class DataLoaderHandlerKaggle:
+    dataset_name: str
+    extract_path: str
+    dataset_path: str
+    dataset: Dataset
+    input_dim: int
+    train_data: Dataset
+    test_data: Dataset
+    train_loader: DataLoader
+    test_loader: DataLoader
+
     def __init__(self, dataset_name, root='./data_kaggle'):
         self.dataset_name = dataset_name
         self.extract_path = os.path.join(root, dataset_name)
@@ -66,7 +79,7 @@ class DataLoaderHandlerKaggle:
         self.input_dim = self._get_input_dim()
         self.train_data, self.test_data = self._split_dataset()
         self.train_loader, self.test_loader = self._create_dataloaders()
-
+    
     def _download_and_extract_kaggle_dataset(self, kaggle_dataset_path):
         os.makedirs(self.extract_path, exist_ok=True)
         kaggle.api.dataset_download_files(kaggle_dataset_path, path=self.extract_path, unzip=True)

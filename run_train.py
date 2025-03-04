@@ -2,9 +2,9 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader
-from dataset_torch import DataLoaderHandlerTorch
-from dataset_kaggle import DataLoaderHandlerKaggle
+from torch.utils.data import DataLoader, random_split
+from dataset_torch import TorchDataset
+from dataset_kaggle import KaggleDataset
 import numpy as np
 from tqdm import tqdm
 from model import MLPNN
@@ -34,6 +34,15 @@ class ArgumentParserHandler:
     def parse_arguments(self):
         return self.parser.parse_args()
 
+def select_dataset(origin_data='KAGGLE', torch_data='CIFAR10', kaggle_data='FIRE'):
+    if origin_data == 'TORCH':
+        torch_dataset = TorchDataset(torch_data)
+        dataset = torch_dataset.dataset
+    else:
+        kaggle_dataset = KaggleDataset(kaggle_data)
+        dataset = kaggle_dataset.dataset
+    return dataset
+
 class Trainer:
     device: torch
     input_dim: int
@@ -47,22 +56,32 @@ class Trainer:
     test_logits: np
     test_labels: np
 
-    def __init__(self, origin_data='KAGGLE', torch_data='CIFAR10', kaggle_data='FIRE',
-                 model=MLPNN, learning_rate=0.0001, betas=(0.9, 0.999)):
-        
+    def __init__(self, dataset, model=MLPNN, learning_rate=0.0001, betas=(0.9, 0.999)):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.input_dim, self.train_loader, self.test_loader = self._select_dataset(origin_data, torch_data, kaggle_data)  
+        self.dataset = dataset
+        self.input_dim, self.train_loader, self.test_loader = self._create_dataloaders()
+        
         self.model =  model(self.input_dim).to(self.device).apply(self._weight_initializer)   
         self.criterion = nn.BCEWithLogitsLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate, betas=betas)
 
-    def _select_dataset(self, oring_data, torch_data, kaggle_data): 
-        if oring_data == 'TORCH':
-            dataloader = DataLoaderHandlerTorch(torch_data)
-        else:
-            dataloader = DataLoaderHandlerKaggle(kaggle_data)
+    def _create_dataloaders(self, train_split=0.8, batch_size=32):
+        # input_dim
+        example_image, _ = self.dataset[0]  
+        num_channels, height, width = example_image.shape
+        print(f"Dataset with Channels: {num_channels} | Height: {height} | Width: {width}")
+        input_dim = num_channels * height * width
+        
+        # split_dataset
+        train_size = int(train_split * len(self.dataset))
+        test_size = len(self.dataset) - train_size
+        train_data, test_data = random_split(self.dataset, [train_size, test_size])
 
-        return dataloader.input_dim, dataloader.train_loader, dataloader.test_loader
+        # dataloaders
+        train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
+        test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
+        
+        return input_dim, train_loader, test_loader
     
     def _weight_initializer(self, m):
         if isinstance(m, nn.Linear):
@@ -83,7 +102,6 @@ class Trainer:
                 loss.backward()
                 self.optimizer.step()
                 running_loss += loss.item()
-                
                 progress_bar.set_postfix(loss=running_loss / (progress_bar.n + 1))
             print(f"Epoch {epoch+1}/{epochs}, Loss: {running_loss/len(self.train_loader):.4f}")
     
@@ -138,11 +156,9 @@ class Trainer:
 if __name__ == "__main__":
     args_handler = ArgumentParserHandler()
     args = args_handler.parse_arguments()
-    
-    trainer = Trainer(origin_data=args.origin_data, 
-                      torch_data=args.torch_data, 
-                      kaggle_data=args.kaggle_data,
-                      learning_rate=args.lr) 
+
+    dataset = select_dataset(args.origin_data, args.torch_data, args.kaggle_data)
+    trainer = Trainer(dataset) 
     trainer.train(args.epochs)
     trainer.test(args.threshold)
         

@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader, random_split, Dataset
 from torchvision import transforms
 from PIL import Image, UnidentifiedImageError
 
-dataset_path_dict = {'FIRE': 'phylake1337/fire-dataset',
+DATASET_PATH_DICT = {'FIRE': 'phylake1337/fire-dataset',
                      'CATS_AND_DOGS': 'shaunthesheep/microsoft-catsvsdogs-dataset'}
 
 class CustomImageDataset(Dataset):
@@ -54,16 +54,12 @@ class CustomImageDataset(Dataset):
         
         return image, label
 
-class DataLoaderHandlerKaggle:
+class KaggleDataset:
     dataset_name: str
     extract_path: str
     dataset_path: str
+    kaggle_dataset_path: str
     dataset: Dataset
-    input_dim: int
-    train_data: Dataset
-    test_data: Dataset
-    train_loader: DataLoader
-    test_loader: DataLoader
 
     def __init__(self, dataset_name, root='./data_kaggle'):
         self.dataset_name = dataset_name
@@ -71,46 +67,27 @@ class DataLoaderHandlerKaggle:
         self.dataset_path = self._get_extracted_dataset_path()
 
         if self.dataset_path is None:
-            kaggle_dataset_path = dataset_path_dict[dataset_name]
-            self._download_and_extract_kaggle_dataset(kaggle_dataset_path)
+            self.kaggle_dataset_path = DATASET_PATH_DICT[dataset_name]
+            self._download_and_extract_kaggle_dataset()
             self.dataset_path = self._get_extracted_dataset_path()
         
         self.dataset = CustomImageDataset(self.dataset_path)
-        self.input_dim = self._get_input_dim()
-        self.train_data, self.test_data = self._split_dataset()
-        self.train_loader, self.test_loader = self._create_dataloaders()
     
-    def _download_and_extract_kaggle_dataset(self, kaggle_dataset_path):
+    def _download_and_extract_kaggle_dataset(self):
         os.makedirs(self.extract_path, exist_ok=True)
-        kaggle.api.dataset_download_files(kaggle_dataset_path, path=self.extract_path, unzip=True)
+        kaggle.api.dataset_download_files(self.kaggle_dataset_path, path=self.extract_path, unzip=True)
         print(f'Dataset {self.dataset_name} downloaded and extracted in {self.extract_path}')
 
     def _get_extracted_dataset_path(self):
         if not os.path.exists(self.extract_path) or not os.listdir(self.extract_path):
             return None
-        
         # Dynamically identifies the name of the extracted dataset folder
         subdirs = [d for d in os.listdir(self.extract_path) if os.path.isdir(os.path.join(self.extract_path, d))]
 
         if any(os.path.isdir(os.path.join(self.extract_path, d)) for d in subdirs):
             dataset_subdir = os.path.join(self.extract_path, subdirs[0]) 
             return dataset_subdir 
-        
         print(f"Dataset found it in: {self.extract_path}")
-        return self.extract_path
-        
-    def _get_input_dim(self):
-        example_image, _ = self.dataset[0]
-        num_channels, height, width = example_image.shape
-        print(f"Dataset: {self.dataset_name} | Channels: {num_channels} | Height: {height} | Width: {width}")
-        return num_channels * height * width
+   
 
-    def _split_dataset(self, train_split=0.8):
-        train_size = int(train_split * len(self.dataset))
-        test_size = len(self.dataset) - train_size
-        return random_split(self.dataset, [train_size, test_size])
-
-    def _create_dataloaders(self, batch_size=32):
-        train_loader = DataLoader(self.train_data, batch_size=batch_size, shuffle=True)
-        test_loader = DataLoader(self.test_data, batch_size=batch_size, shuffle=False)
-        return train_loader, test_loader
+    

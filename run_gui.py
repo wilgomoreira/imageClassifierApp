@@ -7,24 +7,26 @@ class ImageClassificationApp:
     title: str
     description: str
     classes: tuple
+    model_path: str
     model: torch
     interface: gr
 
-    def __init__(self, classes=('FIRE', 'NON FIRE')):
+    def __init__(self, classes=('FIRE', 'NON FIRE'), model_path='model_saved/mpl_model.pth', model=MLPNN):
         self.title = f'{classes[0]} or {classes[1]} Detection'
         self.description = f'Upload an image to classify it as {classes[0]} or {classes[1]}.'
         self.classes = classes
+        self.model_path = model_path
 
-        self.model = self._load_model()
+        self.model = self._load_model(model)
         self.interface = self._create_interface()
         self.interface.launch()    # launch(true) for public link
 
-    def _load_model(self, n_channels=3, resize_img=(256, 256), model_path='model_saved/mpl_model.pth'):
+    def _load_model(self, model, n_channels=3, resize_img=(256, 256)):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         input_dim = n_channels * resize_img[0] * resize_img[1]
-        model = MLPNN(input_dim)
-        model.load_state_dict(torch.load(model_path, map_location=torch.device(device)))
+        model = model(input_dim)
+        model.load_state_dict(torch.load(self.model_path, map_location=torch.device(device)))
         model.eval()
         return model
 

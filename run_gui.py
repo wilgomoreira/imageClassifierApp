@@ -11,11 +11,11 @@ class ImageClassificationApp:
     model: torch
     interface: gr
 
-    def __init__(self, classes=('FIRE', 'NON FIRE'), model_path='model_saved/mpl_model.pth', model=MLPNN):
+    def __init__(self, dataset_name='CATS_AND_DOGS-KAGGLE', classes=('CAT', 'DOG'), model_dir='model_saved/', model=MLPNN):
         self.title = f'{classes[0]} or {classes[1]} Detection'
         self.description = f'Upload an image to classify it as {classes[0]} or {classes[1]}.'
         self.classes = classes
-        self.model_path = model_path
+        self.model_path = f'{model_dir}mpl_model_{dataset_name.lower()}.pth'
 
         self.model = self._load_model(model)
         self.interface = self._create_interface()

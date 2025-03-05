@@ -1,6 +1,6 @@
 import os
 import kaggle
-from torch.utils.data import DataLoader, random_split, Dataset
+from torch.utils.data import Dataset
 from torchvision import transforms
 from PIL import Image, UnidentifiedImageError
 
@@ -30,7 +30,6 @@ class CustomImageDataset(Dataset):
             if os.path.isdir(class_path):
                 for img_file in os.listdir(class_path):
                     img_path = os.path.join(class_path, img_file)
-                    
                     # Check if the file has a valid image extension
                     if any(img_file.lower().endswith(ext) for ext in self.valid_extensions):
                         self.image_paths.append(img_path)
@@ -64,19 +63,23 @@ class KaggleDataset:
     def __init__(self, dataset_name, root='./data_kaggle'):
         self.dataset_name = dataset_name
         self.extract_path = os.path.join(root, dataset_name)
-        self.dataset_path = self._get_extracted_dataset_path()
 
-        if self.dataset_path is None:
-            self.kaggle_dataset_path = DATASET_PATH_DICT[dataset_name]
-            self._download_and_extract_kaggle_dataset()
-            self.dataset_path = self._get_extracted_dataset_path()
-        
+        self.dataset_path = self._ensure_dataset_availability_and_download(dataset_name)
         self.dataset = CustomImageDataset(self.dataset_path)
     
-    def _download_and_extract_kaggle_dataset(self):
-        os.makedirs(self.extract_path, exist_ok=True)
-        kaggle.api.dataset_download_files(self.kaggle_dataset_path, path=self.extract_path, unzip=True)
-        print(f'Dataset {self.dataset_name} downloaded and extracted in {self.extract_path}')
+    def _ensure_dataset_availability_and_download(self, dataset_name):
+        dataset_path = self._get_extracted_dataset_path()
+        
+        if dataset_path is None:
+            self.kaggle_dataset_path = DATASET_PATH_DICT[dataset_name]
+            os.makedirs(self.extract_path, exist_ok=True)
+            
+            kaggle.api.dataset_download_files(self.kaggle_dataset_path, path=self.extract_path, unzip=True)
+            print(f'Dataset {dataset_name} downloaded and extracted in {self.extract_path}')
+            
+            dataset_path = self._get_extracted_dataset_path()
+        
+        return dataset_path
 
     def _get_extracted_dataset_path(self):
         if not os.path.exists(self.extract_path) or not os.listdir(self.extract_path):

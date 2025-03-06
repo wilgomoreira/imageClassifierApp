@@ -19,7 +19,6 @@ class PostProcessing:
         self.dir_logits_labels = dir_logits_labels
 
         self.train_logits, self.train_labels, self.test_logits, self.test_labels = self._load_data()
-        self.train_logits_all_cl, self.test_logits_all_cl = self._divide_classes_from_model()
 
     def _load_data(self):
         os.makedirs(self.analysis.output_dir, exist_ok=True)
@@ -30,28 +29,17 @@ class PostProcessing:
                 np.load(f'{self.dir_logits_labels}test_logits.npy'),
                 np.load(f'{self.dir_logits_labels}test_labels.npy'))
 
-    def _divide_classes_from_model(self):
-        train_logits_all_cl = self._separate_logits_by_class(self.train_logits, self.train_labels)
-        test_logits_all_cl = self._separate_logits_by_class(self.test_logits, self.test_labels)
-        return train_logits_all_cl, test_logits_all_cl
-
-    def _separate_logits_by_class(self, logits, labels):
-        logits = np.array(logits).squeeze()
-        labels = np.array(labels)
-
-        unique_classes = np.unique(labels)
-        return {cls: logits[labels == cls] for cls in unique_classes}
-
     def run_analysis(self):
         # Generate histograms for logits and likelihoods
-        self.analysis.generate_histograms(self.test_logits_all_cl, 'logit', '1')
+        self.analysis.generate_histograms(self.test_logits, 'logit', '1')
 
-        likelihoods = {cls: self.analysis.logits_to_likelihoods(logits) for cls, logits in self.test_logits_all_cl.items()}
-        self.analysis.generate_histograms(likelihoods, 'likelihood', '2')
+        likelihoods = self.analysis.logits_to_likelihoods(self.test_logits) 
+        self.analysis.generate_histograms(likelihoods, 'baseline-probability', '2')
 
         # Using KDE approach
-        kde = self.new_approach(self.train_logits_all_cl, self.test_logits)
+        kde = self.new_approach(self.train_logits, self.test_logits)
         posterior_probs = kde.compute_posterior_prob()
+        self.analysis.generate_histograms(posterior_probs, 'KDE-probability', '3')
 
         # Evaluate baseline with KDE
         self.analysis.compute_metrics(self.test_logits, posterior_probs, self.test_labels, 'METRICS IN TEST TIME')

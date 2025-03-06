@@ -11,7 +11,7 @@ class ImageClassificationApp:
     model: torch
     interface: gr
 
-    def __init__(self, dataset_name='CATS_AND_DOGS-KAGGLE', classes=('CAT', 'DOG'), model_dir='model_saved/', model=MLPNN):
+    def __init__(self, dataset_name='FIRE-KAGGLE', classes=('FIRE', 'NON FIRE'), model_dir='model_saved/', model=MLPNN):
         self.title = f'{classes[0]} or {classes[1]} Detection'
         self.description = f'Upload an image to classify it as {classes[0]} or {classes[1]}.'
         self.classes = classes
@@ -52,9 +52,10 @@ class ImageClassificationApp:
         image = transform(image).unsqueeze(0)  
 
         with torch.no_grad():
-            output = torch.sigmoid(self.model(image)).item()
-            predicted_class = self.classes[1] if output >= threshold else self.classes[0]
-        return predicted_class
+            output = self.model(image)
+            probabilities = torch.softmax(output, dim=1)[0]
+        
+        return {self.classes[0]: probabilities[0].item(), self.classes[1]: probabilities[1].item()}
 
 if __name__ == "__main__":
     ImageClassificationApp()

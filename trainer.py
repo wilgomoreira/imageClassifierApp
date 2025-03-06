@@ -6,8 +6,6 @@ import numpy as np
 from tqdm import tqdm
 from model import MLPNN
 
-
-# trainer is prepared for only 2 classes
 class TrainerW:
     device: torch
     dataset: list
@@ -30,7 +28,7 @@ class TrainerW:
         self.input_dim, self.train_loader, self.test_loader = self._create_dataloaders()
         
         self.model =  model(self.input_dim).to(self.device).apply(self._weight_initializer)   
-        self.criterion = nn.BCEWithLogitsLoss()
+        self.criterion = nn.CrossEntropyLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate, betas=betas)
 
     def _create_dataloaders(self, train_split=0.8, batch_size=32):
@@ -63,7 +61,7 @@ class TrainerW:
             
             progress_bar = tqdm(self.train_loader, desc=f"Epoch {epoch+1}/{epochs}", leave=False)
             for images, labels in progress_bar:
-                images, labels = images.to(self.device), labels.to(self.device).float().view(-1, 1)
+                images, labels = images.to(self.device), labels.to(self.device).long()
                 self.optimizer.zero_grad()
                 logit_outputs = self.model(images)
                 loss = self.criterion(logit_outputs, labels)
@@ -73,18 +71,17 @@ class TrainerW:
                 progress_bar.set_postfix(loss=running_loss / (progress_bar.n + 1))
             print(f"Epoch {epoch+1}/{epochs}, Loss: {running_loss/len(self.train_loader):.4f}")
     
-    def test(self, threshold=0.5):
+    def test(self):
         self.model.eval()
         correct = 0
         total = 0
         with torch.no_grad():
             for images, labels in tqdm(self.test_loader, desc="Testing Model"):
-                images, labels = images.to(self.device), labels.to(self.device)
+                images, labels = images.to(self.device), labels.to(self.device).long()
                 logits_outputs = self.model(images)
-                like_outputs = torch.sigmoid(logits_outputs)
-                predicted = (like_outputs > threshold).float()
+                predicted = torch.argmax(logits_outputs, dim=1)
                 total += labels.size(0)
-                correct += (predicted.view(-1) == labels).sum().item()
+                correct += (predicted == labels).sum().item()
         print(f"Test Accuracy: {100 * correct / total:.2f}%")
     
     def get_logits_labels(self):

@@ -24,7 +24,6 @@ class ArgumentParserHandler:
                                  help="Select a dataset from KAGGLE (only used if dataset_origin is KAGGLE).")
         self.parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs.")
         self.parser.add_argument("--lr", type=int, default=0.0001, help="learning rate of training.")
-        self.parser.add_argument("--threshold", type=float, default=0.5, help="Threshold for classification during testing.")
 
     def parse_arguments(self):
         return self.parser.parse_args()
@@ -48,7 +47,7 @@ def main():
     dataset, dataset_name = select_dataset(args.origin_data, args.torch_data, args.kaggle_data)
     trainer = TrainerW(dataset, dataset_name) 
     trainer.train(args.epochs)
-    trainer.test(args.threshold)
+    trainer.test()
         
     trainer.get_logits_labels()
     trainer.save_logits_labels_model()

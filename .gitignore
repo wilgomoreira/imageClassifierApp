@@ -1,2 +1,5 @@
 data/
 data_kaggle/
+model_saved/
+logits_labels/
+plots_and_histograms/

@@ -4,13 +4,6 @@ import math
 import torch
 
 class sklearnKDE:
-    train_logits_pos: np
-    train_logits_neg: np
-    test_logits_pos: np
-    test_logits_neg: np
-    kde_pos: KernelDensity
-    kde_neg: KernelDensity
-
     def __init__(self, train_logits, test_logits, kernel='gaussian', bandwidth=0.5):
         self.train_logits_neg, self.train_logits_pos = train_logits[:,0], train_logits[:,1]
         self.test_logits_neg, self.test_logits_pos = test_logits[:,0], test_logits[:,1]
@@ -28,7 +21,7 @@ class sklearnKDE:
 
         posterior_prob_pos = (likelihoods_pos + epsylon) / ((likelihoods_pos + epsylon) + (likelihoods_neg + epsylon))
         posterior_prob_neg = (likelihoods_neg + epsylon) / ((likelihoods_pos + epsylon) + (likelihoods_neg + epsylon))
-        posterior_prob = np.column_stack((posterior_prob_pos, posterior_prob_neg))
+        posterior_prob = np.column_stack((posterior_prob_neg, posterior_prob_pos))
         
         return posterior_prob
     

@@ -1,0 +1,9 @@
+MODEL WAS TRAINDED WITH:
+Device processor: CPU
+Dataset: FIRE-KAGGLE
+Train split: 80.0%
+Batch size: 32
+Epochs: 5
+Learning Rate: 0.0001
+Betas: (0.9, 0.999)
+TEST ACC: 92.00

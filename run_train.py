@@ -9,8 +9,6 @@ from trainer import TrainerW
 # KAGGLE DATA: FIRE
 
 class ArgumentParserHandler:
-    parser: argparse
-
     def __init__(self):
         self.parser = argparse.ArgumentParser(description="Train a neural network on a selected dataset.")
         self._add_arguments()

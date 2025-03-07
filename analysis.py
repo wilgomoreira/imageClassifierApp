@@ -6,8 +6,6 @@ from netcal.metrics import ECE
 from sklearn.metrics import accuracy_score, f1_score, average_precision_score, confusion_matrix
 
 class Analysis:
-    output_dir: str
-
     def __init__(self, output_dir='results'):
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
@@ -28,7 +26,7 @@ class Analysis:
 
     def compute_metrics(self, logits, enhanced_probs, true_labels, name):
         # Baseline
-        baseline_probs = self.logits_to_likelihoods(logits)
+        baseline_probs = torch.softmax(torch.tensor(logits), dim=1).numpy()
         baseline_metrics = self.calculate_metrics(true_labels, baseline_probs)
         
         # Enhanced approach
@@ -36,15 +34,10 @@ class Analysis:
         
         # salve everything
         self.format_and_save_results(name, baseline_metrics, enhanced_metrics)
-    
-    def logits_to_likelihoods(self, logits):
-        logits_tensor = torch.tensor(logits, dtype=torch.float32)
-        likelihoods = torch.softmax(logits_tensor, dim=1)
-        return likelihoods.numpy() 
  
     def calculate_metrics(self, true_labels, preds, bins=10):
         max_probs, _ = torch.max(torch.from_numpy(preds), dim=1) 
-        preds_labels = torch.argmax(torch.from_numpy(preds)).item()
+        preds_labels = torch.argmax(torch.from_numpy(preds), dim=1)
         tn, fp, fn, tp = confusion_matrix(true_labels, preds_labels.numpy()).ravel()
         fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
         fnr = fn / (fn + tp) if (fn + tp) > 0 else 0

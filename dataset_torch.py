@@ -2,10 +2,6 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 
 class TorchDataset:
-    dataset_name: str
-    transform: transforms
-    dataset: datasets
-
     def __init__(self, dataset_name):
         self.dataset_name = dataset_name
         self.transform = transforms.Compose([

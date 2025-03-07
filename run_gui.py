@@ -4,13 +4,6 @@ from model import MLPNN
 import torchvision.transforms as transforms
 
 class ImageClassificationApp:
-    title: str
-    description: str
-    classes: tuple
-    model_path: str
-    model: torch
-    interface: gr
-
     def __init__(self, dataset_name='FIRE-KAGGLE', classes=('FIRE', 'NON FIRE'), model_dir='model_saved/', model=MLPNN):
         self.title = f'{classes[0]} or {classes[1]} Detection'
         self.description = f'Upload an image to classify it as {classes[0]} or {classes[1]}.'

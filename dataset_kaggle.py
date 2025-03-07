@@ -8,12 +8,6 @@ DATASET_PATH_DICT = {'FIRE': 'phylake1337/fire-dataset',
                      'CATS_AND_DOGS': 'shaunthesheep/microsoft-catsvsdogs-dataset'}
 
 class CustomImageDataset(Dataset):
-    root_dir: str
-    transform: transforms
-    image_paths: list
-    labels: list
-    valid_extensions: list
-
     def __init__(self, root_dir, resize_img=(256, 256)):
         self.root_dir = root_dir
         self.transform = transforms.Compose([
@@ -54,12 +48,6 @@ class CustomImageDataset(Dataset):
         return image, label
 
 class KaggleDataset:
-    dataset_name: str
-    extract_path: str
-    dataset_path: str
-    kaggle_dataset_path: str
-    dataset: Dataset
-
     def __init__(self, dataset_name, root='./data_kaggle'):
         self.dataset_name = dataset_name
         self.extract_path = os.path.join(root, dataset_name)

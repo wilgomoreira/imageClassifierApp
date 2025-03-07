@@ -2,17 +2,9 @@ import os
 import numpy as np
 from kde_inter_prob import sklearnKDE
 from analysis import Analysis
+import torch
 
 class PostProcessing:
-    analysis: Analysis
-    dir_logits_labels: str
-    train_logits: np
-    train_labels: np
-    test_logits: np
-    test_labels: np
-    train_logits_all_cl: dict
-    test_logits_all_cl: dict
-
     def __init__(self, new_approach=sklearnKDE, analysis=Analysis, dir_logits_labels='logits_labels/'):
         self.analysis = analysis()
         self.new_approach = new_approach
@@ -33,7 +25,7 @@ class PostProcessing:
         # Generate histograms for logits and likelihoods
         self.analysis.generate_histograms(self.test_logits, 'logit', '1')
 
-        likelihoods = self.analysis.logits_to_likelihoods(self.test_logits) 
+        likelihoods = torch.softmax(torch.tensor(self.test_logits), dim=1).numpy()
         self.analysis.generate_histograms(likelihoods, 'baseline-probability', '2')
 
         # Using KDE approach
@@ -42,7 +34,7 @@ class PostProcessing:
         self.analysis.generate_histograms(posterior_probs, 'KDE-probability', '3')
 
         # Evaluate baseline with KDE
-        self.analysis.compute_metrics(self.test_logits, posterior_probs, self.test_labels, 'METRICS IN TEST TIME')
+        self.analysis.compute_metrics(self.test_logits, posterior_probs, self.test_labels, 'METRICS_BASELINE_VS_NEW_APPROACH')
 
 def main():
     post_process = PostProcessing()

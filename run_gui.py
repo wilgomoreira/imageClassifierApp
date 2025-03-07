@@ -47,7 +47,7 @@ class ImageClassificationApp:
             allow_flagging="never"
         )
 
-    def _classify_image(self, image, threshold=0.5):
+    def _classify_image(self, image):
         transform = self._transform() 
         image = transform(image).unsqueeze(0)  
 

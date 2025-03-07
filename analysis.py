@@ -44,7 +44,7 @@ class Analysis:
  
     def calculate_metrics(self, true_labels, preds, bins=10):
         max_probs, _ = torch.max(torch.from_numpy(preds), dim=1) 
-        preds_labels = torch.argmax(torch.from_numpy(preds), dim=1) 
+        preds_labels = torch.argmax(torch.from_numpy(preds)).item()
         tn, fp, fn, tp = confusion_matrix(true_labels, preds_labels.numpy()).ravel()
         fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
         fnr = fn / (fn + tp) if (fn + tp) > 0 else 0

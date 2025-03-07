@@ -47,14 +47,17 @@ class PostProcessing:
         self.analysis.generate_histograms(self.test_logits_all_cl, 'logit', '1')
 
         likelihoods = {cls: self.analysis.logits_to_likelihoods(logits) for cls, logits in self.test_logits_all_cl.items()}
-        self.analysis.generate_histograms(likelihoods, 'likelihood', '2')
+        self.analysis.generate_histograms(likelihoods, 'baseline-probability', '2')
 
         # Using KDE approach
         kde = self.new_approach(self.train_logits_all_cl, self.test_logits)
         posterior_probs = kde.compute_posterior_prob()
+        
+        posterior_all_cl = self._separate_logits_by_class(posterior_probs, self.test_labels)
+        self.analysis.generate_histograms(posterior_all_cl, 'kde-probability', '3')
 
         # Evaluate baseline with KDE
-        self.analysis.compute_metrics(self.test_logits, posterior_probs, self.test_labels, 'METRICS IN TEST TIME')
+        self.analysis.compute_metrics(self.test_logits, posterior_probs, self.test_labels, 'METRICS_BASELINE_VS_NEW_APPROACH')
 
 def main():
     post_process = PostProcessing()

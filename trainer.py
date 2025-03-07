@@ -5,9 +5,9 @@ from torch.utils.data import DataLoader, random_split
 import numpy as np
 from tqdm import tqdm
 from model import MLPNN
+import os
 
-
-# trainer is prepared for only 2 classes
+# trainer is prepared for only 2 classes (1 class of output from model)
 class TrainerW:
     device: torch
     dataset: list
@@ -24,16 +24,21 @@ class TrainerW:
     test_labels: np
 
     def __init__(self, dataset, dataset_name, model=MLPNN, learning_rate=0.0001, betas=(0.9, 0.999)):
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.processor = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.device = torch.device(self.processor)
         self.dataset = dataset
         self.dataset_name = dataset_name
         self.input_dim, self.train_loader, self.test_loader = self._create_dataloaders()
         
         self.model =  model(self.input_dim).to(self.device).apply(self._weight_initializer)   
         self.criterion = nn.BCEWithLogitsLoss()
-        self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate, betas=betas)
+        self.lr = learning_rate
+        self.betas = betas
+        self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr, betas=self.betas)
 
     def _create_dataloaders(self, train_split=0.8, batch_size=32):
+        self.train_split = train_split
+        self.batch_size = batch_size
         # input_dim
         example_image, _ = self.dataset[0]  
         num_channels, height, width = example_image.shape
@@ -57,6 +62,7 @@ class TrainerW:
             nn.init.zeros_(m.bias)
     
     def train(self, epochs=5):  
+        self.epochs = epochs
         for epoch in range(epochs):
             self.model.train()
             running_loss = 0.0
@@ -74,6 +80,7 @@ class TrainerW:
             print(f"Epoch {epoch+1}/{epochs}, Loss: {running_loss/len(self.train_loader):.4f}")
     
     def test(self, threshold=0.5):
+        self.threshold = threshold
         self.model.eval()
         correct = 0
         total = 0
@@ -85,11 +92,12 @@ class TrainerW:
                 predicted = (like_outputs > threshold).float()
                 total += labels.size(0)
                 correct += (predicted.view(-1) == labels).sum().item()
-        print(f"Test Accuracy: {100 * correct / total:.2f}%")
+
+        self.test_acc = 100 * correct / total
+        print(f"Test Accuracy: {self.test_acc:.2f}%")
     
     def get_logits_labels(self):
         self.model.eval()
-
         train_logits, train_labels = [], []
         with torch.no_grad():
             for images, lbls in tqdm(self.train_loader, desc="Extracting Train Logits"):
@@ -111,7 +119,7 @@ class TrainerW:
         self.test_logits = test_logits
         self.test_labels = test_labels
     
-    def save_logits_labels_model(self, dir_logits_labels='logits_labels/', model_dir='model_saved/'):   
+    def save_logits_labels_model(self, dir_logits_labels='logits_labels/', model_dir='model_saved/', results_dir='results/'):   
         np.save(f'{dir_logits_labels}train_logits.npy', self.train_logits)
         np.save(f'{dir_logits_labels}train_labels.npy', self.train_labels)
         np.save(f'{dir_logits_labels}test_logits.npy', self.test_logits)
@@ -121,3 +129,17 @@ class TrainerW:
         model_path = f'{model_dir}mpl_model_{self.dataset_name.lower()}.pth'
         torch.save(self.model.state_dict(), model_path)
         print("model was saved successfully!")
+
+        text =  (f'MODEL WAS TRAINDED WITH:\n' 
+                f'Device processor: {self.processor.upper()}\n'
+                f'Dataset: {self.dataset_name.upper()}\n'
+                f'Train split: {self.train_split*100}%\n'
+                f'Batch size: {self.batch_size}\n'
+                f'Epochs: {self.epochs}\n'
+                f'Learning Rate: {self.lr}\n'
+                f'Betas: {self.betas}\n'
+                f'Threshold: {self.threshold}\n'
+                f'TEST ACC: {self.test_acc:.2f}')
+
+        with open(os.path.join(results_dir, 'train_infos.txt'), 'w') as f:
+            f.write(text)

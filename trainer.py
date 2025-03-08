@@ -100,6 +100,16 @@ class TrainerW:
         self.train_labels = train_labels
         self.test_logits = test_logits
         self.test_labels = test_labels
+
+    def _get_info_from_model(self):
+        # number of classes
+        num_classes = self.model.num_classes
+        # number of layers of model
+        num_layers = sum(1 for _ in self.model.children())
+        # number of neurons by layer
+        num_neurons_by_layer = self.model.num_neurons
+
+        return num_classes, num_layers, num_neurons_by_layer
     
     def save_logits_labels_model(self, dir_logits_labels='logits_labels/', model_dir='model_saved/', results_dir='results/'):   
         np.save(f'{dir_logits_labels}train_logits.npy', self.train_logits)
@@ -112,7 +122,14 @@ class TrainerW:
         torch.save(self.model.state_dict(), model_path)
         print("model was saved successfully!")
 
-        text =  (f'MODEL WAS TRAINDED WITH:\n' 
+        num_classes, num_layers, num_neurons_by_layer = self._get_info_from_model()
+
+        text =  (f'MODEL HAS: \n'
+                f'Classes: {num_classes} \n' 
+                f'Number of layers: {num_layers} \n' 
+                f'Number of neurons by layer: {num_neurons_by_layer} \n' 
+                f'---------------------------------------------------\n' 
+                f'MODEL WAS TRAINDED WITH:\n' 
                 f'Device processor: {self.processor.upper()}\n'
                 f'Dataset: {self.dataset_name.upper()}\n'
                 f'Train split: {self.train_split*100}%\n'

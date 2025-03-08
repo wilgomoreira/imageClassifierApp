@@ -4,6 +4,9 @@ import torch.nn as nn
 class MLPNN(nn.Module):
     def __init__(self, input_dim, num_neurons=128, num_classes=2):
         super(MLPNN, self).__init__()
+        self.input_dim = input_dim
+        self.num_neurons = num_neurons
+        self.num_classes = num_classes
         self.fc1 = nn.Linear(input_dim, num_neurons)
         self.fc2 = nn.Linear(num_neurons, num_neurons)
         self.fc3 = nn.Linear(num_neurons, num_classes)

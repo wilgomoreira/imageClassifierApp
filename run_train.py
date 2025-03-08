@@ -3,7 +3,6 @@ from dataset_torch import TorchDataset
 from dataset_kaggle import KaggleDataset
 from trainer import TrainerW
 
-
 # ORING DATA: TORCH, KAGGLE
 # TORCH DATA: MNIST, FashionMNIST, CIFAR10
 # KAGGLE DATA: FIRE

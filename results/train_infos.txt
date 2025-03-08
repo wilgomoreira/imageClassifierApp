@@ -1,3 +1,8 @@
+MODEL HAS: 
+Classes: 2 
+Number of layers: 3 
+Number of neurons by layer: 128 
+---------------------------------------------------
 MODEL WAS TRAINDED WITH:
 Device processor: CPU
 Dataset: FIRE-KAGGLE
@@ -6,4 +11,4 @@ Batch size: 32
 Epochs: 5
 Learning Rate: 0.0001
 Betas: (0.9, 0.999)
-TEST ACC: 92.00
+TEST ACC: 90.50%

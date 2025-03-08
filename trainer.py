@@ -8,7 +8,7 @@ from model import MLPNN
 import os
 
 class TrainerW:
-    def __init__(self, dataset, dataset_name, model=MLPNN, learning_rate=0.0001, betas=(0.9, 0.999)):
+    def __init__(self, dataset, dataset_name, model=MLPNN, criterion=nn.CrossEntropyLoss(), learning_rate=0.0001, betas=(0.9, 0.999)):
         self.processor = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.device = torch.device(self.processor)
         self.dataset = dataset
@@ -16,7 +16,7 @@ class TrainerW:
         self.input_dim, self.train_loader, self.test_loader = self._create_dataloaders()
         
         self.model =  model(self.input_dim).to(self.device).apply(self._weight_initializer)   
-        self.criterion = nn.CrossEntropyLoss()
+        self.criterion = criterion
         self.lr = learning_rate
         self.betas = betas
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr, betas=self.betas)
@@ -100,16 +100,6 @@ class TrainerW:
         self.train_labels = train_labels
         self.test_logits = test_logits
         self.test_labels = test_labels
-
-    def _get_info_from_model(self):
-        # number of classes
-        num_classes = self.model.num_classes
-        # number of layers of model
-        num_layers = sum(1 for _ in self.model.children())
-        # number of neurons by layer
-        num_neurons_by_layer = self.model.num_neurons
-
-        return num_classes, num_layers, num_neurons_by_layer
     
     def save_logits_labels_model(self, dir_logits_labels='logits_labels/', model_dir='model_saved/', results_dir='results/'):   
         np.save(f'{dir_logits_labels}train_logits.npy', self.train_logits)
@@ -122,12 +112,8 @@ class TrainerW:
         torch.save(self.model.state_dict(), model_path)
         print("model was saved successfully!")
 
-        num_classes, num_layers, num_neurons_by_layer = self._get_info_from_model()
-
         text =  (f'MODEL HAS: \n'
-                f'Classes: {num_classes} \n' 
-                f'Number of layers: {num_layers} \n' 
-                f'Number of neurons by layer: {num_neurons_by_layer} \n' 
+                f'Number of classes: {self.model.num_classes} \n' 
                 f'---------------------------------------------------\n' 
                 f'MODEL WAS TRAINDED WITH:\n' 
                 f'Device processor: {self.processor.upper()}\n'
